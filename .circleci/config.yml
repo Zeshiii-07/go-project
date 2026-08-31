@@ -3,7 +3,7 @@ version: 2.1
 executors:
   go-executor:
     docker:
-      - image: cimg/go:1.26.0
+      - image: cimg/go:1.24.0
     working_directory: ~/project
 
 jobs:
@@ -14,11 +14,12 @@ jobs:
       - run:
           name: Install golangci-lint
           command: |
-            go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+            mkdir -p ./bin
+            GOBIN=$(pwd)/bin go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
       - run:
           name: Run golangci-lint
           command: |
-            $(go env GOPATH)/bin/golangci-lint run ./...
+            ./bin/golangci-lint run ./...
       - run:
           name: Run Unit Tests
           command: |
@@ -31,11 +32,12 @@ jobs:
       - run:
           name: Install govulncheck
           command: |
-            go install golang.org/x/vuln/cmd/govulncheck@latest
+            mkdir -p ./bin
+            GOBIN=$(pwd)/bin go install golang.org/x/vuln/cmd/govulncheck@latest
       - run:
           name: Run govulncheck
           command: |
-            $(go env GOPATH)/bin/govulncheck ./...
+            ./bin/govulncheck ./...
 
   build:
     executor: go-executor

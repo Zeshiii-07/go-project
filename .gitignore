@@ -1,0 +1,10 @@
+# Binaries and local builds
+bin/
+*.exe
+*.exe;
+*.dll
+*.so
+*.dylib
+
+# Test coverage / profile
+*.out
