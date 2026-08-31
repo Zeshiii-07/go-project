@@ -3,7 +3,7 @@ version: 2.1
 executors:
   go-executor:
     docker:
-      - image: cimg/go:1.25.0
+      - image: cimg/go:1.24.0
     working_directory: ~/project
 
 jobs:
@@ -14,11 +14,11 @@ jobs:
       - run:
           name: Install golangci-lint
           command: |
-            curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.64.5
+            go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
       - run:
           name: Run golangci-lint
           command: |
-            golangci-lint run ./...
+            $(go env GOPATH)/bin/golangci-lint run ./...
       - run:
           name: Run Unit Tests
           command: |
@@ -35,7 +35,7 @@ jobs:
       - run:
           name: Run govulncheck
           command: |
-            govulncheck ./...
+            $(go env GOPATH)/bin/govulncheck ./...
 
   build:
     executor: go-executor
