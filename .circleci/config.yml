@@ -24,14 +24,14 @@ jobs:
             podman pull docker.io/library/nginx:latest
             podman run -d \
               --name nginx \
-              -p 80:80 \
+              -p 8080:80 \
               docker.io/library/nginx:latest
 
       - run:
           name: Verify Nginx
           command: |
             podman ps
-            curl -I http://localhost
+            curl -I http://localhost:8080
 
 workflows:
   deploy:
