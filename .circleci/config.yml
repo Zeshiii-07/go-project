@@ -1,69 +1,39 @@
 version: 2.1
 
-executors:
-  go-executor:
-    docker:
-      - image: cimg/go:1.25
-    working_directory: ~/project
-
 jobs:
-  lint:
-    executor: go-executor
+  deploy-nginx:
+    machine: true
+    resource_class: hashx/deployment
     steps:
       - checkout
-      - run:
-          name: Install and Run golangci-lint
-          command: |
-            export GOBIN=$HOME/bin
-            export PATH=$GOBIN:$PATH
-            mkdir -p $GOBIN
-            go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-            golangci-lint run ./...
-      - run:
-          name: Run Unit Tests
-          command: |
-            go test -v ./...
 
-  vulncheck:
-    executor: go-executor
-    steps:
-      - checkout
       - run:
-          name: Install and Run govulncheck
+          name: Check Podman
           command: |
-            export GOBIN=$HOME/bin
-            export PATH=$GOBIN:$PATH
-            mkdir -p $GOBIN
-            go install golang.org/x/vuln/cmd/govulncheck@latest
-            govulncheck ./...
+            podman --version
 
-  build:
-    executor: go-executor
-    steps:
-      - checkout
-      - setup_remote_docker:
-          version: default
       - run:
-          name: Build Go Binary locally
+          name: Stop existing Nginx
           command: |
-            cd api/services/authx
-            go build -v -ldflags "-X main.build=${CIRCLE_SHA1}"
+            podman stop nginx || true
+            podman rm nginx || true
+
       - run:
-          name: Build Docker Image
+          name: Deploy Nginx
           command: |
-            docker build \
-              --build-arg BUILD_REF="${CIRCLE_SHA1}" \
-              --build-arg BUILD_DATE="$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
-              -t authx:${CIRCLE_SHA1} .
+            podman pull docker.io/library/nginx:latest
+            podman run -d \
+              --name nginx \
+              -p 80:80 \
+              docker.io/library/nginx:latest
+
+      - run:
+          name: Verify Nginx
+          command: |
+            podman ps
+            curl -I http://localhost
 
 workflows:
-  version: 2
-  ci-cd-pipeline:
+  deploy:
     jobs:
-      - lint
-      - vulncheck:
-          requires:
-            - lint
-      - build:
-          requires:
-            - vulncheck
+      - deploy-nginx
